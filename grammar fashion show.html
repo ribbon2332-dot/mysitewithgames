@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Fashion Show</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            overscroll-behavior: none;
+            user-select: none;
+            background-color: #f3f4f6;
+        }
+        /* Custom bounce animation for victory */
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        .animate-jump {
+            animation: jump 0.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        // --- CONSTANTS & DATA ---
+
+        // **************************************************************************
+        // **************************************************************************
+        // 👇👇👇  РЕДАКТИРОВАТЬ КАРТИНКИ НИЖЕ  👇👇👇
+        // **************************************************************************
+        
+        const FALLING_ITEMS = [
+            { 
+                // 1. ФУТБОЛКА
+                emoji: '👕', 
+                color: 'bg-blue-400', 
+                // 👇 Впишите имя файла между кавычек. Например: "tshirt.png"
+                imageUrl: "images/T-shirt.svg" 
+            }, 
+            
+            { 
+                // 2. ПЛАТЬЕ
+                emoji: '👗', 
+                color: 'bg-pink-400', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/dress.svg" 
+            }, 
+            
+            { 
+                // 3. ДЖИНСЫ
+                emoji: '👖', 
+                color: 'bg-indigo-600', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/jeans.svg" 
+            }, 
+            
+            { 
+                // 4. КЕПКА
+                emoji: '🧢', 
+                color: 'bg-red-500', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/cap.svg" 
+            }, 
+            
+            { 
+                // 5. КРОССОВКИ
+                emoji: '👟', 
+                color: 'bg-orange-400', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/sneaker.svg" 
+            }, 
+            
+            { 
+                // 6. ПАЛЬТО
+                emoji: '🧥', 
+                color: 'bg-amber-600', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/coat.svg" 
+            }, 
+            
+            { 
+                // 7. ШАРФ
+                emoji: '🧣', 
+                color: 'bg-purple-400', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/coat.svg" 
+            }, 
+            
+            { 
+                // 8. НОСКИ
+                emoji: '🧦', 
+                color: 'bg-teal-300', 
+                // 👇 Впишите имя файла между кавычек
+                imageUrl: "images/socks.svg" 
+            }, 
+        ];
+        
+        // **************************************************************************
+        // 👆👆👆  КОНЕЦ РЕДАКТИРОВАНИЯ  👆👆👆
+        // **************************************************************************
+
+        const WINNING_SCORE = 50;
+        const QUIZ_INTERVAL = 5;
+        const MAX_LIVES = 5;
+        const BASKET_WIDTH_PERCENT = 20;
+        const SPAWN_RATE_MS = 1500;
+        const GRAVITY_BASE = 1.5;
+
+        const QUIZZES = [
+             // Have Got / Has Got
+            { id: 1, topic: 'have_got', question: "I ___ a red bicycle.", options: ["have got", "has got", "is got"], correctAnswer: "have got" },
+            { id: 2, topic: 'have_got', question: "She ___ a new doll.", options: ["have got", "has got", "having"], correctAnswer: "has got" },
+            { id: 3, topic: 'have_got', question: "We ___ a big house.", options: ["has got", "have got", "got"], correctAnswer: "have got" },
+            { id: 4, topic: 'have_got', question: "___ you got a pencil?", options: ["Has", "Have", "Do"], correctAnswer: "Have" },
+            { id: 5, topic: 'have_got', question: "He ___ blue eyes.", options: ["have got", "has got", "have"], correctAnswer: "has got" },
+            { id: 6, topic: 'have_got', question: "They ___ not got any money.", options: ["has", "have", "is"], correctAnswer: "have" },
+            { id: 7, topic: 'have_got', question: "It ___ four legs.", options: ["have got", "has got", "got"], correctAnswer: "has got" },
+            
+            // Personal Pronouns
+            { id: 8, topic: 'personal', question: "___ is my sister.", options: ["He", "She", "It"], correctAnswer: "She" },
+            { id: 9, topic: 'personal', question: "___ are playing football.", options: ["They", "He", "She"], correctAnswer: "They" },
+            { id: 10, topic: 'personal', question: "___ am seven years old.", options: ["I", "You", "Me"], correctAnswer: "I" },
+            { id: 11, topic: 'personal', question: "Look at the cat. ___ is sleeping.", options: ["He", "She", "It"], correctAnswer: "It" },
+            { id: 12, topic: 'personal', question: "___ are my best friend.", options: ["He", "You", "She"], correctAnswer: "You" },
+            { id: 13, topic: 'personal', question: "My dad is tall. ___ is very strong.", options: ["She", "It", "He"], correctAnswer: "He" },
+
+            // Possessive Pronouns (Adjectives)
+            { id: 14, topic: 'possessive', question: "This is my brother. ___ name is Tom.", options: ["Her", "His", "He"], correctAnswer: "His" },
+            { id: 15, topic: 'possessive', question: "I have a cat. ___ name is Fluffy.", options: ["Its", "It", "My"], correctAnswer: "Its" },
+            { id: 16, topic: 'possessive', question: "We live here. This is ___ house.", options: ["their", "our", "us"], correctAnswer: "our" },
+            { id: 17, topic: 'possessive', question: "You have a pen. Is this ___ pen?", options: ["you", "your", "yours"], correctAnswer: "your" },
+            { id: 18, topic: 'possessive', question: "She has a bag. It is ___ bag.", options: ["his", "her", "she"], correctAnswer: "her" },
+            { id: 19, topic: 'possessive', question: "They have a car. It is ___ car.", options: ["their", "them", "they"], correctAnswer: "their" },
+            { id: 20, topic: 'possessive', question: "I have a book. This is ___ book.", options: ["my", "mine", "I"], correctAnswer: "my" },
+
+            // Vocabulary
+            { id: 21, topic: 'vocabulary', question: "You wear this on your head.", options: ["Cap", "Shoe", "Jeans"], correctAnswer: "Cap" },
+            { id: 22, topic: 'vocabulary', question: "You wear these on your feet.", options: ["Socks", "Gloves", "Hat"], correctAnswer: "Socks" },
+            { id: 23, topic: 'vocabulary', question: "It is cold! Put on your ___.", options: ["Coat", "T-shirt", "Shorts"], correctAnswer: "Coat" },
+            { id: 24, topic: 'vocabulary', question: "You wear this around your neck.", options: ["Scarf", "Sock", "Boot"], correctAnswer: "Scarf" },
+            { id: 25, topic: 'vocabulary', question: "You wear these on your legs.", options: ["Jeans", "Hats", "Gloves"], correctAnswer: "Jeans" },
+            { id: 26, topic: 'vocabulary', question: "In summer, I wear a ___.", options: ["T-shirt", "Winter coat", "Scarf"], correctAnswer: "T-shirt" },
+            { id: 27, topic: 'vocabulary', question: "What do you wear on your hands?", options: ["Gloves", "Shoes", "Hats"], correctAnswer: "Gloves" },
+            { id: 28, topic: 'vocabulary', question: "Cinderella lost her ___.", options: ["Shoe", "Hat", "Coat"], correctAnswer: "Shoe" },
+        ];
+
+        // --- COMPONENTS ---
+
+        const GameCanvas = ({ items, basketX, onMoveBasket, gameActive }) => {
+            const containerRef = useRef(null);
+
+            // Handle Mouse/Touch Movement
+            const handleMove = (clientX) => {
+                if (!containerRef.current || !gameActive) return;
+                const rect = containerRef.current.getBoundingClientRect();
+                const x = clientX - rect.left;
+                const percentage = (x / rect.width) * 100;
+                
+                // Clamp value so basket stays fully visible
+                const halfWidth = BASKET_WIDTH_PERCENT / 2;
+                const clamped = Math.max(halfWidth, Math.min(100 - halfWidth, percentage));
+                
+                onMoveBasket(clamped);
+            };
+
+            const onMouseMove = (e) => handleMove(e.clientX);
+            const onTouchMove = (e) => handleMove(e.touches[0].clientX);
+
+            // SVG Pattern Data URI
+            const clothingPattern = `data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg opacity='0.2' font-family='Arial, sans-serif'%3E%3Ctext x='10' y='35' font-size='25'%3E👕%3C/text%3E%3Ctext x='60' y='35' font-size='25'%3E👗%3C/text%3E%3Ctext x='10' y='85' font-size='25'%3E👖%3C/text%3E%3Ctext x='60' y='85' font-size='25'%3E🧥%3C/text%3E%3C/g%3E%3C/svg%3E`;
+
+            return (
+                <div 
+                ref={containerRef}
+                className="relative w-full h-full overflow-hidden cursor-none touch-none rounded-xl border-4 border-indigo-600 shadow-2xl bg-gradient-to-br from-fuchsia-400 via-purple-500 to-indigo-600"
+                onMouseMove={onMouseMove}
+                onTouchMove={onTouchMove}
+                >
+                {/* Pattern Overlay */}
+                <div 
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ backgroundImage: `url("${clothingPattern}")` }}
+                ></div>
+
+                {/* Decorative Background Elements (High Contrast) */}
+                <div className="absolute top-10 left-10 w-40 h-40 bg-yellow-300/30 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-20 right-20 w-60 h-60 bg-cyan-400/20 rounded-full blur-3xl"></div>
+                
+                {/* Falling Items */}
+                {items.map((item) => {
+                    const config = FALLING_ITEMS[item.typeIndex];
+                    return (
+                    <div
+                        key={item.id}
+                        className="absolute transform -translate-x-1/2 flex items-center justify-center transition-transform"
+                        style={{
+                        left: `${item.x}%`,
+                        top: `${item.y}px`,
+                        width: `${item.width}px`,
+                        height: `${item.width}px`,
+                        }}
+                    >
+                        {config.imageUrl ? (
+                        <img 
+                            src={config.imageUrl} 
+                            alt="falling object" 
+                            className="w-full h-full object-contain drop-shadow-lg"
+                        />
+                        ) : (
+                        <span className="text-5xl md:text-6xl filter drop-shadow-2xl select-none transform hover:scale-110 transition-transform">
+                            {config.emoji}
+                        </span>
+                        )}
+                    </div>
+                    );
+                })}
+
+                {/* Basket - Laundry Basket Look */}
+                <div
+                    className="absolute bottom-4 transform -translate-x-1/2 transition-transform duration-75 ease-linear z-20"
+                    style={{
+                    left: `${basketX}%`,
+                    width: `${BASKET_WIDTH_PERCENT}%`,
+                    height: '70px',
+                    }}
+                >
+                    <div className="w-full h-full relative group">
+                        {/* Basket Graphic */}
+                    <svg viewBox="0 0 100 70" className="w-full h-full drop-shadow-2xl">
+                        <ellipse cx="50" cy="15" rx="45" ry="10" fill="#fcd34d" stroke="#d97706" strokeWidth="2"/>
+                        <path d="M5,15 L20,65 Q50,75 80,65 L95,15" fill="#fef3c7" stroke="#d97706" strokeWidth="2" />
+                        <path d="M15,30 L85,30 M20,45 L80,45" stroke="#fde68a" strokeWidth="2" fill="none"/>
+                        <path d="M5,15 Q50,25 95,15" fill="none" stroke="#d97706" strokeWidth="3" strokeLinecap="round" />
+                    </svg>
+                    </div>
+                </div>
+                
+                {/* Floor */}
+                <div className="absolute bottom-0 w-full h-6 bg-gradient-to-r from-green-400 to-emerald-600 z-10 border-t-4 border-emerald-700"></div>
+                </div>
+            );
+        };
+
+        const QuizModal = ({ question, onAnswer }) => {
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [hasSubmitted, setHasSubmitted] = useState(false);
+            const [isCorrect, setIsCorrect] = useState(false);
+
+            const handleSubmit = (option) => {
+                if (hasSubmitted) return;
+                
+                setSelectedOption(option);
+                setHasSubmitted(true);
+                
+                const correct = option === question.correctAnswer;
+                setIsCorrect(correct);
+
+                setTimeout(() => {
+                    onAnswer(correct);
+                }, 1500);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border-4 border-yellow-400 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-4 bg-yellow-400"></div>
+                    
+                    <h2 className="text-3xl font-bold text-center text-purple-600 mb-6 font-['Fredoka']">
+                    Quiz Time! 🧠
+                    </h2>
+                    
+                    <div className="mb-8">
+                    <p className="text-xl text-gray-800 font-medium text-center">
+                        {question.question}
+                    </p>
+                    </div>
+
+                    <div className="space-y-3">
+                    {question.options.map((option, idx) => {
+                        let btnClass = "w-full p-4 rounded-xl text-lg font-bold transition-all transform hover:scale-105 border-2 ";
+                        
+                        if (hasSubmitted) {
+                            if (option === question.correctAnswer) {
+                                btnClass += "bg-green-500 text-white border-green-600";
+                            } else if (option === selectedOption) {
+                                btnClass += "bg-red-500 text-white border-red-600";
+                            } else {
+                                btnClass += "bg-gray-100 text-gray-400 border-gray-200";
+                            }
+                        } else {
+                            btnClass += "bg-blue-100 hover:bg-blue-200 text-blue-800 border-blue-300";
+                        }
+
+                        return (
+                        <button
+                            key={idx}
+                            onClick={() => handleSubmit(option)}
+                            disabled={hasSubmitted}
+                            className={btnClass}
+                        >
+                            {option}
+                        </button>
+                        );
+                    })}
+                    </div>
+
+                    {hasSubmitted && (
+                    <div className={`mt-4 text-center text-lg font-bold ${isCorrect ? 'text-green-600' : 'text-red-500'}`}>
+                        {isCorrect ? "🎉 Great Job!" : "❌ Oops! Try again next time."}
+                    </div>
+                    )}
+                </div>
+                </div>
+            );
+        };
+
+        // --- MAIN APP ---
+
+        const App = () => {
+            // Game State
+            const [gameState, setGameState] = useState('START');
+            const [score, setScore] = useState(0);
+            const [lives, setLives] = useState(MAX_LIVES);
+
+            // Entities
+            const [basketX, setBasketX] = useState(50); 
+            const [items, setItems] = useState([]);
+            
+            // Quiz State
+            const [activeQuiz, setActiveQuiz] = useState(null);
+
+            // Refs
+            const requestRef = useRef();
+            const lastTimeRef = useRef();
+            const lastSpawnTime = useRef(0);
+            const containerDimensions = useRef({ width: 0, height: 0 });
+
+            // Start Game
+            const startGame = () => {
+                setScore(0);
+                setLives(MAX_LIVES);
+                setItems([]);
+                setBasketX(50);
+                setGameState('PLAYING');
+                lastTimeRef.current = performance.now();
+            };
+
+            // Keyboard
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (gameState !== 'PLAYING') return;
+                    if (e.key === 'ArrowLeft') {
+                        setBasketX(prev => Math.max(BASKET_WIDTH_PERCENT / 2, prev - 5));
+                    } else if (e.key === 'ArrowRight') {
+                        setBasketX(prev => Math.min(100 - (BASKET_WIDTH_PERCENT / 2), prev + 5));
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [gameState]);
+
+            // Quiz Trigger
+            const triggerQuiz = useCallback(() => {
+                const randomIndex = Math.floor(Math.random() * QUIZZES.length);
+                setActiveQuiz(QUIZZES[randomIndex]);
+                setGameState('QUIZ');
+            }, []);
+
+            const handleQuizAnswer = (isCorrect) => {
+                setActiveQuiz(null);
+                if (isCorrect) {
+                    setGameState('PLAYING');
+                    lastTimeRef.current = performance.now();
+                } else {
+                    setScore(prev => Math.max(0, prev - 5));
+                    setGameState('PLAYING');
+                    lastTimeRef.current = performance.now();
+                }
+            };
+
+            // Game Loop
+            const update = useCallback((time) => {
+                if (gameState !== 'PLAYING') return;
+
+                if (!lastTimeRef.current) lastTimeRef.current = time;
+                const deltaTime = time - lastTimeRef.current;
+                lastTimeRef.current = time;
+
+                // Spawning
+                if (time - lastSpawnTime.current > SPAWN_RATE_MS) {
+                    const typeIndex = Math.floor(Math.random() * FALLING_ITEMS.length);
+                    const startX = Math.random() * 80 + 10;
+                    const newItem = {
+                        id: Date.now() + Math.random(),
+                        x: startX,
+                        y: -50,
+                        speed: (Math.random() * 2 + GRAVITY_BASE) * (containerDimensions.current.height / 1000),
+                        typeIndex,
+                        width: 60,
+                    };
+                    setItems(prev => [...prev, newItem]);
+                    lastSpawnTime.current = time;
+                }
+
+                // Physics & Collision
+                setItems(prevItems => {
+                    const nextItems = [];
+                    let itemsMissed = 0;
+                    let itemsCaught = 0;
+
+                    const basketWidthPx = (containerDimensions.current.width * BASKET_WIDTH_PERCENT) / 100;
+                    const basketLeftPx = (containerDimensions.current.width * basketX) / 100 - (basketWidthPx / 2);
+                    const basketRightPx = basketLeftPx + basketWidthPx;
+                    const basketTopPx = containerDimensions.current.height - 80;
+
+                    prevItems.forEach(item => {
+                        const nextY = item.y + item.speed;
+                        const itemCenter = item.x * (containerDimensions.current.width / 100);
+                        const hitBasket = 
+                            nextY + item.width >= basketTopPx &&
+                            nextY < containerDimensions.current.height &&
+                            itemCenter > basketLeftPx &&
+                            itemCenter < basketRightPx;
+
+                        if (hitBasket) {
+                            itemsCaught++;
+                        } else if (nextY > containerDimensions.current.height) {
+                            itemsMissed++;
+                        } else {
+                            nextItems.push({ ...item, y: nextY });
+                        }
+                    });
+
+                    if (itemsCaught > 0) {
+                        setScore(prevScore => {
+                            const newScore = prevScore + itemsCaught;
+                            if (newScore >= WINNING_SCORE) {
+                                setTimeout(() => setGameState('VICTORY'), 0);
+                                return newScore;
+                            }
+                            if (newScore % QUIZ_INTERVAL === 0 && newScore !== 0) {
+                                setTimeout(triggerQuiz, 0);
+                            }
+                            return newScore;
+                        });
+                    }
+
+                    if (itemsMissed > 0) {
+                        setLives(prev => {
+                            const newLives = prev - itemsMissed;
+                            if (newLives <= 0) {
+                                setTimeout(() => setGameState('GAME_OVER'), 0);
+                                return 0;
+                            }
+                            return newLives;
+                        });
+                    }
+
+                    return nextItems;
+                });
+
+                requestRef.current = requestAnimationFrame(update);
+            }, [gameState, basketX, triggerQuiz]);
+
+            useEffect(() => {
+                if (gameState === 'PLAYING') {
+                    requestRef.current = requestAnimationFrame(update);
+                } else {
+                    if (requestRef.current) cancelAnimationFrame(requestRef.current);
+                }
+                return () => {
+                    if (requestRef.current) cancelAnimationFrame(requestRef.current);
+                };
+            }, [gameState, update]);
+
+            useEffect(() => {
+                const handleResize = () => {
+                    containerDimensions.current = {
+                        width: window.innerWidth,
+                        height: window.innerHeight - 80
+                    };
+                };
+                handleResize();
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            return (
+                <div className="flex flex-col h-screen bg-gray-100 overflow-hidden font-fredoka">
+                    
+                    {/* Header */}
+                    <div className="h-20 bg-white border-b-4 border-purple-300 flex justify-between items-center px-4 md:px-8 shadow-md z-20 relative">
+                        <div className="flex flex-col">
+                            <span className="text-xs md:text-sm text-gray-500 font-bold tracking-widest uppercase">Goal: {WINNING_SCORE}</span>
+                            <div className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-pink-500">
+                                ⭐ {score}
+                            </div>
+                        </div>
+                        
+                        <h1 className="absolute left-1/2 transform -translate-x-1/2 text-xl md:text-2xl font-black text-purple-600 hidden md:block uppercase tracking-wider">
+                        Grammar Fashion Show
+                        </h1>
+                        
+                        <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold text-gray-400 hidden sm:block">HP:</span>
+                            <div className="flex text-2xl">
+                                {[...Array(MAX_LIVES)].map((_, i) => (
+                                    <span key={i} className={i < lives ? "opacity-100 drop-shadow-sm" : "opacity-20 grayscale"}>❤️</span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Game Area */}
+                    <div className="flex-1 relative">
+                        <GameCanvas 
+                        items={items} 
+                        basketX={basketX} 
+                        onMoveBasket={setBasketX} 
+                        gameActive={gameState === 'PLAYING'} 
+                        />
+
+                        {/* Start Screen */}
+                        {gameState === 'START' && (
+                            <div className="absolute inset-0 bg-indigo-900/70 flex items-center justify-center z-40 backdrop-blur-md p-4">
+                                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-jump">
+                                    <div className="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 p-8 text-center">
+                                        <h1 className="text-4xl md:text-5xl font-black text-white drop-shadow-md mb-2">
+                                            GRAMMAR FASHION SHOW
+                                        </h1>
+                                        <p className="text-white/90 text-lg font-medium">Catch Clothes & Learn English!</p>
+                                    </div>
+
+                                    <div className="p-8 bg-white">
+                                        <h2 className="text-2xl font-bold text-gray-700 mb-6 text-center">HOW TO PLAY</h2>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                            <div className="flex items-start gap-4">
+                                                <div className="bg-blue-100 p-3 rounded-xl text-3xl">🧺</div>
+                                                <div>
+                                                    <h3 className="font-bold text-blue-600">Catch Items</h3>
+                                                    <p className="text-gray-500 text-sm">Move the basket to catch falling clothes.</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-4">
+                                                <div className="bg-purple-100 p-3 rounded-xl text-3xl">🧠</div>
+                                                <div>
+                                                    <h3 className="font-bold text-purple-600">Grammar Quiz</h3>
+                                                    <p className="text-gray-500 text-sm">Answer a question every 5 points.</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-4">
+                                                <div className="bg-green-100 p-3 rounded-xl text-3xl">✅</div>
+                                                <div>
+                                                    <h3 className="font-bold text-green-600">Win Points</h3>
+                                                    <p className="text-gray-500 text-sm">Correct answer = Keep playing!</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-start gap-4">
+                                                <div className="bg-red-100 p-3 rounded-xl text-3xl">❌</div>
+                                                <div>
+                                                    <h3 className="font-bold text-red-600">Penalty</h3>
+                                                    <p className="text-gray-500 text-sm">Wrong answer = Lose 5 points.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <button 
+                                                onClick={startGame}
+                                                className="w-full md:w-auto bg-gradient-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white text-2xl font-black py-4 px-16 rounded-full shadow-xl transform transition hover:scale-105 active:scale-95"
+                                            >
+                                                START GAME ▶
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Game Over Screen */}
+                        {gameState === 'GAME_OVER' && (
+                            <div className="absolute inset-0 bg-red-900/80 flex items-center justify-center z-40 backdrop-blur-sm p-4">
+                                <div className="bg-white p-8 rounded-3xl shadow-2xl text-center max-w-md w-full">
+                                    <div className="text-8xl mb-4">😿</div>
+                                    <h2 className="text-4xl font-bold text-red-600 mb-2">Game Over!</h2>
+                                    <p className="text-xl text-gray-600 mb-6">You collected {score} clothes.</p>
+                                    <button 
+                                        onClick={startGame}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white text-xl font-bold py-3 px-8 rounded-full shadow-lg transition hover:scale-105 w-full"
+                                    >
+                                        Try Again ↺
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Victory Screen */}
+                        {gameState === 'VICTORY' && (
+                            <div className="absolute inset-0 bg-yellow-400/90 flex items-center justify-center z-40 p-4">
+                                <div className="bg-white p-10 rounded-3xl shadow-2xl text-center border-8 border-orange-400 relative overflow-visible max-w-lg w-full">
+                                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 text-8xl animate-bounce">
+                                        🏆
+                                    </div>
+                                    <h2 className="text-5xl font-extrabold text-orange-500 mt-8 mb-4">YOU WON!</h2>
+                                    <p className="text-2xl text-gray-700 mb-2">Fashion & Grammar Expert!</p>
+                                    <p className="text-lg text-gray-500 mb-8">Score: {score}</p>
+                                    <button 
+                                        onClick={startGame}
+                                        className="bg-purple-500 hover:bg-purple-600 text-white text-xl font-bold py-3 px-10 rounded-full shadow-lg transition hover:scale-105 w-full"
+                                    >
+                                        Play Again
+                                    </button>
+                                    <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+                                        {[...Array(20)].map((_, i) => (
+                                            <div key={i} className="absolute text-4xl animate-ping" style={{
+                                                top: `${Math.random() * 100}%`,
+                                                left: `${Math.random() * 100}%`,
+                                                animationDuration: `${Math.random() * 2 + 1}s`,
+                                                animationDelay: `${Math.random()}s`
+                                            }}>✨</div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Quiz Modal */}
+                    {gameState === 'QUIZ' && activeQuiz && (
+                        <QuizModal question={activeQuiz} onAnswer={handleQuizAnswer} />
+                    )}
+
+                </div>
+            );
+        };
+
+        // --- RENDER ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

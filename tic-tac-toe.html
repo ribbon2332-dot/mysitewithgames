@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPQR Tic Tac Toe</title>
+    <style>
+        :root {
+            --imperial-purple: #2a0a3a;
+            --deep-velvet: #1a0626;
+            --gold-light: #ffd700;
+            --gold-dark: #daa520;
+            --crimson: #e74c3c; /* ярко-красный для ошибок */
+            --text-bright: #ffffff;
+            --text-gold: #ffd700;
+            --cell-bg: rgba(40, 10, 50, 0.6);
+            --cell-hover: rgba(255, 215, 0, 0.25);
+            --win-highlight: rgba(255, 215, 0, 0.5);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            --transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            /* ЧИТАЕМЫЙ ШРИФТ ПО УМОЛЧАНИЮ */
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(139, 0, 0, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(139, 0, 0, 0.2) 0%, transparent 60%),
+                var(--imperial-purple);
+            color: var(--text-bright);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 2vmin 3vmin;
+            background: rgba(10, 0, 15, 0.85);
+            backdrop-filter: blur(12px);
+            position: relative;
+            z-index: 10;
+            box-shadow: var(--shadow);
+            border-bottom: 2px solid var(--gold-light);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 4.5vmin;
+            letter-spacing: 0.1em;
+            color: var(--gold-light);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.7), 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .controls {
+            display: flex;
+            gap: 2vmin;
+        }
+
+        .btn {
+            background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+            color: var(--deep-velvet);
+            border: none;
+            padding: 1vmin 1.8vmin;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 2.4vmin;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 0.03em;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(to bottom, #fff, var(--gold-light));
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 2vmin;
+            position: relative;
+        }
+
+        .status {
+            font-size: 3.8vmin;
+            font-weight: 800;
+            margin-bottom: 3vmin;
+            text-align: center;
+            min-height: 5vmin;
+            color: var(--text-gold);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.9);
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 2vmin;
+            width: min(85vmin, 95vw);
+            aspect-ratio: 1/1;
+            max-width: 85vmin;
+            background: var(--deep-velvet);
+            padding: 3vmin;
+            border-radius: 20px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.7), var(--shadow);
+            border: 3px solid var(--gold-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell {
+            background: var(--cell-bg);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14vmin;
+            font-weight: 900;
+            cursor: pointer;
+            position: relative;
+            z-index: 1;
+            transition: var(--transition);
+            aspect-ratio: 1/1;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            color: var(--gold-light);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        .cell:hover:not(.played) {
+            background: var(--cell-hover);
+            transform: scale(1.08);
+            border-color: var(--gold-light);
+            z-index: 2;
+        }
+
+        .cell.played {
+            cursor: default;
+        }
+
+        .cell.win {
+            background: var(--win-highlight);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px var(--gold-light); }
+            50% { box-shadow: 0 0 40px var(--gold-light); }
+        }
+
+        .cell.x::before,
+        .cell.x::after {
+            content: "";
+            position: absolute;
+            background: var(--gold-light);
+            border-radius: 2px;
+            z-index: 2;
+        }
+
+        .cell.x::before {
+            width: 45%;
+            height: 1.2vmin;
+            transform: rotate(45deg);
+        }
+
+        .cell.x::after {
+            width: 45%;
+            height: 1.2vmin;
+            transform: rotate(-45deg);
+        }
+
+        .cell.o::before {
+            content: "";
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            border: 1.2vmin solid var(--gold-light);
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-around;
+            width: min(85vmin, 95vw);
+            max-width: 85vmin;
+            margin-top: 4vmin;
+            padding: 2.5vmin;
+            background: rgba(10, 0, 15, 0.85);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--gold-light);
+        }
+
+        .score {
+            text-align: center;
+        }
+
+        .score-label {
+            font-size: 2.6vmin;
+            color: var(--text-gold);
+            margin-bottom: 0.8vmin;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+        }
+
+        .score-value {
+            font-size: 4.5vmin;
+            font-weight: 800;
+            color: var(--text-bright);
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.9);
+        }
+
+        .victory-banner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(139, 0, 0, 0.92);
+            color: var(--gold-light);
+            padding: 2.5vmin 5vmin;
+            border-radius: 16px;
+            font-size: 4.8vmin;
+            font-weight: 800;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.7);
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
+            border: 2px solid var(--gold-light);
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.9);
+        }
+
+        .victory-banner.show {
+            opacity: 1;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 30;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: radial-gradient(circle at center, rgba(30, 10, 40, 0.9), rgba(15, 5, 25, 0.95));
+            width: min(92%, 750px);
+            max-width: 92%;
+            max-height: 92vh;
+            overflow-y: auto;
+            border-radius: 24px;
+            padding: 5vmin;
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.6);
+            position: relative;
+            transform: translateY(25px);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 4px double var(--gold-light);
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+        }
+
+        .quiz-question {
+            font-size: 4.2vmin;
+            font-weight: 700;
+            margin-bottom: 4vmin;
+            text-align: center;
+            line-height: 1.4;
+            color: white;
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.9);
+            padding: 0 2vmin;
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2vmin;
+            margin-bottom: 2.5vmin;
+        }
+
+        @media (min-width: 650px) {
+            .quiz-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .quiz-option {
+            background: rgba(20, 5, 30, 0.8);
+            border: 3px solid var(--gold-dark);
+            color: white;
+            padding: 2vmin 1.5vmin;
+            font-size: 3.2vmin;
+            font-weight: 700;
+            border-radius: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.9);
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 215, 0, 0.25);
+            border-color: var(--gold-light);
+            transform: translateY(-4px);
+            color: var(--text-bright);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.9);
+        }
+
+        .quiz-option.selected {
+            background: rgba(255, 215, 0, 0.7);
+            color: var(--deep-velvet);
+            font-weight: 900;
+            border-color: var(--gold-light);
+            text-shadow: none;
+        }
+
+        /* УЛУЧШЕННЫЙ ФИДБЕК — ЧЕТКО ВИДЕН И БЕЗ ПОВТОРОВ */
+        .quiz-feedback {
+            margin-top: 2.5vmin;
+            font-size: 4vmin;
+            font-weight: 800;
+            text-align: center;
+            min-height: 5.5vmin;
+            padding: 1vmin 2vmin;
+            border-radius: 12px;
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.9), 2px 2px 4px rgba(0, 0, 0, 0.9);
+            animation: none;
+        }
+
+        .quiz-feedback.incorrect {
+            color: var(--crimson);
+            background: rgba(0, 0, 0, 0.4);
+            animation: shake 0.6s ease-in-out;
+        }
+
+        .quiz-feedback.correct {
+            color: var(--gold-light);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3.5vmin;
+            padding-bottom: 2.5vmin;
+            border-bottom: 2px solid var(--gold-light);
+        }
+
+        .modal-title {
+            font-size: 4.5vmin;
+            color: var(--gold-light);
+            text-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
+        }
+
+        .close-btn {
+            background: none;
+            border: 2px solid var(--gold-light);
+            color: var(--gold-light);
+            font-size: 6vmin;
+            cursor: pointer;
+            padding: 0;
+            width: 8vmin;
+            height: 8vmin;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 215, 0, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .form-group {
+            margin-bottom: 3.5vmin;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 3vmin;
+            margin-bottom: 2vmin;
+            color: var(--gold-light);
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+        }
+
+        .radio-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2vmin;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 1.2vmin;
+        }
+
+        .radio-option input {
+            width: 3vmin;
+            height: 3vmin;
+            accent-color: var(--gold-light);
+        }
+
+        .radio-option label {
+            font-size: 2.8vmin;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+        }
+
+        .difficulty-desc {
+            font-size: 2.2vmin;
+            color: #ccc;
+            margin-top: 1.2vmin;
+            padding-left: 4vmin;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2.5vmin;
+            font-size: 2vmin;
+            color: #aaa;
+            margin-top: auto;
+            text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+        }
+
+        @media (max-width: 768px) {
+            .status { font-size: 5vmin; }
+            .btn { font-size: 2.8vmin; }
+            .score-label { font-size: 3vmin; }
+            .score-value { font-size: 5.5vmin; }
+            .quiz-question { font-size: 5vmin; }
+            .quiz-option { font-size: 3.8vmin; }
+            .quiz-feedback { font-size: 4.5vmin; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo">SPQR</div>
+        <div class="controls">
+            <button id="new-round" class="btn">New Round</button>
+            <button id="customize" class="btn">Customize</button>
+            <button id="reset-scores" class="btn">Reset Scores</button>
+        </div>
+    </div>
+
+    <main>
+        <div class="status" id="status">X's turn</div>
+        <div class="board" role="grid" aria-label="Tic Tac Toe board">
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+            <div class="cell" role="gridcell" tabindex="0"></div>
+        </div>
+        <div class="scoreboard">
+            <div class="score">
+                <div class="score-label">Legion X</div>
+                <div class="score-value" id="score-x">0</div>
+            </div>
+            <div class="score">
+                <div class="score-label">Draws</div>
+                <div class="score-value" id="score-draw">0</div>
+            </div>
+            <div class="score">
+                <div class="score-label">Legion O</div>
+                <div class="score-value" id="score-o">0</div>
+            </div>
+        </div>
+        <div class="victory-banner" id="victory-banner">Legion X Victorious!</div>
+    </main>
+    
+    <canvas id="confetti-canvas"></canvas>
+    
+    <div class="modal" id="quiz-modal">
+        <div class="modal-content">
+            <div class="quiz-question" id="quiz-question"></div>
+            <div class="quiz-options" id="quiz-options"></div>
+            <div class="quiz-feedback" id="quiz-feedback"></div>
+        </div>
+    </div>
+    
+    <div class="modal" id="customize-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Imperial Customization</h2>
+                <button class="close-btn" id="close-modal">&times;</button>
+            </div>
+            <!-- ... остальной контент без изменений ... -->
+            <div class="form-group">
+                <label class="form-label">Theme</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="theme-day" name="theme" value="day" checked>
+                        <label for="theme-day">Marble Day</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="theme-night" name="theme" value="night">
+                        <label for="theme-night">Night Legion</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Glyphs</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="glyphs-standard" name="glyphs" value="standard" checked>
+                        <label for="glyphs-standard">Standard (X/O)</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="glyphs-roman" name="glyphs" value="roman">
+                        <label for="glyphs-roman">Roman (Gladius/Laurel)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Mode</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="mode-2p" name="mode" value="2p" checked>
+                        <label for="mode-2p">Two Legions</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="mode-ai" name="mode" value="ai">
+                        <label for="mode-ai">Versus Caesar</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">First Move</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="first-x" name="first" value="x" checked>
+                        <label for="first-x">Legion X</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="first-o" name="first" value="o">
+                        <label for="first-o">Legion O</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Caesar's Discipline</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="ai-perfect" name="ai-difficulty" value="perfect" checked>
+                        <label for="ai-perfect">Perfect</label>
+                        <div class="difficulty-desc">Never loses, always wins if possible</div>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="ai-pragmatic" name="ai-difficulty" value="pragmatic">
+                        <label for="ai-pragmatic">Pragmatic</label>
+                        <div class="difficulty-desc">Plays well but may make mistakes</div>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="ai-reckless" name="ai-difficulty" value="reckless">
+                        <label for="ai-reckless">Reckless</label>
+                        <div class="difficulty-desc">Aggressive but error-prone</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Senatus Populusque Romanus
+    </div>
+
+    <script>
+        // Game state
+        const state = {
+            board: Array(9).fill(null),
+            currentPlayer: 'x',
+            gameActive: true,
+            scores: { x: 0, o: 0, draw: 0 },
+            settings: {
+                theme: 'day',
+                glyphs: 'standard',
+                mode: '2p',
+                firstMove: 'x',
+                aiDifficulty: 'perfect'
+            },
+            pendingMoveIndex: null,
+            // НОВОЕ: очередь вопросов в раунде
+            currentRoundQuestions: [],
+            currentQuestionIndex: 0
+        };
+
+        // Quiz questions
+        const quizQuestions = [
+            "I ______ happy.,am,is,are,1",
+            "She ______ my friend.,am,is,are,2",
+            "They ______ students.,am,is,are,3",
+            "He ______ (not) like carrots.,don't like,doesn't like,doesn't likes,2",
+            "We ______ (not) play football every day.,don't plays,doesn't play,don't play,3",
+            "______ you live in a house?,Do,Does,Are,1",
+            "______ he read books?,Do,Does,Is,2",
+            "______ is a doctor. (про маму),She,He,It,1",
+            "I have a dog. ______ is funny.,She,He,It,3",
+            "This is ______ book. (моя),my,I,me,1",
+            "That is ______ bike. (их),they,them,their,3",
+            "______ is my pencil. (Вот),This,These,That,1",
+            "Look at ______ birds! (Вон те),this,that,those,3",
+            "I ______ a new robot.,have got,has got,am got,1",
+            "He ______ two sisters.,have got,has got,is got,2",
+            "______ you ______ a red pen?,Has...got,Have...got,Do...have got,2",
+            "She ______ swim very well.,can,can to,cans,1",
+            "______ they speak English?,Can,Do,Are,1",
+            "one cat - three ______,cat,cates,cats,3",
+            "one child - many ______,childs,children,childrens,2"
+        ];
+
+        // DOM elements
+        const cells = document.querySelectorAll('.cell');
+        const statusEl = document.getElementById('status');
+        const victoryBanner = document.getElementById('victory-banner');
+        const scoreXEl = document.getElementById('score-x');
+        const scoreOEl = document.getElementById('score-o');
+        const scoreDrawEl = document.getElementById('score-draw');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const ctx = confettiCanvas.getContext('2d');
+
+        const quizModal = document.getElementById('quiz-modal');
+        const quizQuestionEl = document.getElementById('quiz-question');
+        const quizOptionsEl = document.getElementById('quiz-options');
+        const quizFeedbackEl = document.getElementById('quiz-feedback');
+
+        const newRoundBtn = document.getElementById('new-round');
+        const customizeBtn = document.getElementById('customize');
+        const resetScoresBtn = document.getElementById('reset-scores');
+        const closeModalBtn = document.getElementById('close-modal');
+        const modal = document.getElementById('customize-modal');
+
+        // Fisher-Yates shuffle
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Initialize
+        function init() {
+            updateBoardDisplay();
+            updateStatus();
+            setupEventListeners();
+            resizeCanvas();
+            newRound();
+        }
+
+        function setupEventListeners() {
+            cells.forEach((cell, index) => {
+                cell.addEventListener('click', () => handleCellClick(index));
+                cell.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        handleCellClick(index);
+                    }
+                });
+            });
+
+            newRoundBtn.addEventListener('click', newRound);
+            customizeBtn.addEventListener('click', () => modal.classList.add('show'));
+            resetScoresBtn.addEventListener('click', resetScores);
+            closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
+
+            window.addEventListener('resize', resizeCanvas);
+        }
+
+        function handleCellClick(index) {
+            if (!state.gameActive || state.board[index] !== null) return;
+            
+            if (state.settings.mode === 'ai' && state.currentPlayer === 'o') {
+                makeMove(index);
+                setTimeout(makeAIMove, 500);
+            } else {
+                state.pendingMoveIndex = index;
+                showQuiz();
+            }
+        }
+
+        // ПОКАЗ ВОПРОСА БЕЗ ПОВТОРОВ
+        function showQuiz() {
+            // Если список вопросов пуст — перемешиваем заново
+            if (state.currentQuestionIndex >= state.currentRoundQuestions.length) {
+                state.currentRoundQuestions = shuffleArray(quizQuestions);
+                state.currentQuestionIndex = 0;
+            }
+
+            const questionStr = state.currentRoundQuestions[state.currentQuestionIndex];
+            const parts = questionStr.split(',');
+            const question = parts[0];
+            const options = parts.slice(1, 4);
+            const correctIndex = parseInt(parts[4]) - 1;
+
+            state.currentQuiz = { correctIndex, questionIndex: state.currentQuestionIndex };
+
+            quizQuestionEl.textContent = question;
+            quizOptionsEl.innerHTML = '';
+            quizFeedbackEl.textContent = '';
+
+            options.forEach((option, i) => {
+                const btn = document.createElement('div');
+                btn.className = 'quiz-option';
+                btn.textContent = option;
+                btn.addEventListener('click', () => handleQuizAnswer(i));
+                quizOptionsEl.appendChild(btn);
+            });
+
+            quizModal.classList.add('show');
+        }
+
+        function handleQuizAnswer(selectedIndex) {
+            const options = quizOptionsEl.querySelectorAll('.quiz-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            options[selectedIndex].classList.add('selected');
+
+            if (selectedIndex === state.currentQuiz.correctIndex) {
+                quizFeedbackEl.textContent = "ПРАВИЛЬНО!";
+                quizFeedbackEl.className = "quiz-feedback correct";
+                
+                setTimeout(() => {
+                    quizModal.classList.remove('show');
+                    // Переходим к следующему вопросу в следующий раз
+                    state.currentQuestionIndex++;
+                    makeMove(state.pendingMoveIndex);
+                    
+                    if (state.gameActive && state.settings.mode === 'ai' && state.currentPlayer === 'o') {
+                        setTimeout(makeAIMove, 500);
+                    }
+                }, 1000);
+            } else {
+                quizFeedbackEl.textContent = "Давай попробуем еще разок";
+                quizFeedbackEl.className = "quiz-feedback incorrect";
+                // НЕ увеличиваем индекс — тот же вопрос!
+            }
+        }
+
+        // ... остальные функции без изменений ...
+        function makeMove(index) {
+            state.board[index] = state.currentPlayer;
+            updateBoardDisplay();
+            const winner = checkWinner();
+            if (winner) {
+                endGame(winner);
+            } else if (state.board.every(cell => cell !== null)) {
+                endGame('draw');
+            } else {
+                state.currentPlayer = state.currentPlayer === 'x' ? 'o' : 'x';
+                updateStatus();
+            }
+        }
+
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (state.board[a] && state.board[a] === state.board[b] && state.board[a] === state.board[c]) {
+                    pattern.forEach(index => cells[index].classList.add('win'));
+                    return state.board[a];
+                }
+            }
+            return null;
+        }
+
+        function endGame(result) {
+            state.gameActive = false;
+            if (result === 'draw') {
+                statusEl.textContent = "Draw! Both legions stand strong.";
+                victoryBanner.textContent = "Stalemate!";
+            } else {
+                statusEl.textContent = `${result.toUpperCase()} wins! Gloria!`;
+                victoryBanner.textContent = `Legion ${result.toUpperCase()} Victorious!`;
+                if (result === 'x') {
+                    state.scores.x++;
+                    scoreXEl.textContent = state.scores.x;
+                } else {
+                    state.scores.o++;
+                    scoreOEl.textContent = state.scores.o;
+                }
+                victoryBanner.classList.add('show');
+                if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+                    startConfetti();
+                }
+            }
+        }
+
+        function newRound() {
+            state.board = Array(9).fill(null);
+            state.currentPlayer = state.settings.firstMove;
+            state.gameActive = true;
+            // СБРАСЫВАЕМ ВОПРОСЫ ДЛЯ НОВОГО РАУНДА
+            state.currentRoundQuestions = [];
+            state.currentQuestionIndex = 0;
+            cells.forEach(cell => {
+                cell.className = 'cell';
+                cell.textContent = '';
+            });
+            victoryBanner.classList.remove('show');
+            updateBoardDisplay();
+            updateStatus();
+            if (state.settings.mode === 'ai' && state.currentPlayer === 'o') {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+
+        function resetScores() {
+            state.scores = { x: 0, o: 0, draw: 0 };
+            scoreXEl.textContent = '0';
+            scoreOEl.textContent = '0';
+            scoreDrawEl.textContent = '0';
+        }
+
+        function updateBoardDisplay() {
+            cells.forEach((cell, index) => {
+                cell.textContent = '';
+                cell.className = 'cell';
+                if (state.board[index]) {
+                    cell.classList.add('played');
+                    cell.classList.add(state.board[index]);
+                }
+            });
+        }
+
+        function updateStatus() {
+            if (state.gameActive) {
+                const player = state.currentPlayer === 'x' ? 'Legion X' : 'Legion O';
+                const action = state.settings.mode === 'ai' && state.currentPlayer === 'o' ? 'Caesar' : player;
+                statusEl.textContent = `${action}'s turn`;
+            }
+        }
+
+        function makeAIMove() {
+            if (!state.gameActive) return;
+            let move;
+            switch (state.settings.aiDifficulty) {
+                case 'perfect': move = getBestMove(); break;
+                case 'pragmatic': move = Math.random() < 0.8 ? getBestMove() : getRandomMove(); break;
+                case 'reckless': move = Math.random() < 0.5 ? getBestMove() : getRandomMove(); break;
+                default: move = getBestMove();
+            }
+            makeMove(move);
+        }
+
+        function getBestMove() {
+            let bestScore = -Infinity;
+            let bestMove;
+            for (let i = 0; i < 9; i++) {
+                if (state.board[i] === null) {
+                    state.board[i] = 'o';
+                    let score = minimax(state.board, 0, false);
+                    state.board[i] = null;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+            return bestMove;
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            const winner = checkWinnerForBoard(board);
+            if (winner === 'o') return 10 - depth;
+            if (winner === 'x') return depth - 10;
+            if (board.every(cell => cell !== null)) return 0;
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'o';
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = null;
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === null) {
+                        board[i] = 'x';
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = null;
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+
+        function checkWinnerForBoard(board) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            for (const pattern of winPatterns) {
+                const [a, b, c] = pattern;
+                if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                    return board[a];
+                }
+            }
+            return null;
+        }
+
+        function getRandomMove() {
+            const emptyCells = state.board
+                .map((cell, index) => cell === null ? index : null)
+                .filter(index => index !== null);
+            return emptyCells[Math.floor(Math.random() * emptyCells.length)];
+        }
+
+        function startConfetti() {
+            const confettiCount = 150;
+            const confettiPieces = [];
+            for (let i = 0; i < confettiCount; i++) {
+                confettiPieces.push({
+                    x: Math.random() * confettiCanvas.width,
+                    y: -20,
+                    size: Math.random() * 10 + 5,
+                    color: `hsl(${Math.random() * 360}, 100%, 70%)`,
+                    speed: Math.random() * 3 + 2,
+                    angle: Math.random() * Math.PI * 2,
+                    rotation: Math.random() * 360,
+                    rotationSpeed: Math.random() * 10 - 5
+                });
+            }
+            let animationId;
+            const animate = () => {
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                let allDone = true;
+                confettiPieces.forEach(piece => {
+                    piece.y += piece.speed;
+                    piece.x += Math.sin(piece.angle) * 0.5;
+                    piece.rotation += piece.rotationSpeed;
+                    ctx.save();
+                    ctx.translate(piece.x, piece.y);
+                    ctx.rotate(piece.rotation * Math.PI / 180);
+                    ctx.fillStyle = piece.color;
+                    ctx.fillRect(-piece.size/2, -piece.size/2, piece.size, piece.size/3);
+                    ctx.restore();
+                    if (piece.y < confettiCanvas.height) allDone = false;
+                });
+                if (!allDone) animationId = requestAnimationFrame(animate);
+                else cancelAnimationFrame(animationId);
+            };
+            animate();
+            setTimeout(() => {
+                cancelAnimationFrame(animationId);
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            }, 3000);
+        }
+
+        function resizeCanvas() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

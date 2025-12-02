@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEAL MAZE CHALLENGE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .header {
+            width: 100%;
+            max-width: 800px;
+            background-color: #1e293b;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-circle {
+            width: 20px;
+            height: 20px;
+            background-color: #10b981;
+            border-radius: 50%;
+        }
+        
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #10b981;
+        }
+        
+        .controls-top {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .key-indicators {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .key-label {
+            font-size: 0.9rem;
+            margin-right: 5px;
+            color: #d81b60; /* Малиновый для надписи KEYS */
+        }
+        
+        .key-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #d81b60; /* МАЛИНОВЫЙ ЦВЕТ КЛЮЧЕЙ */
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+        
+        .key-dot.collected {
+            opacity: 1;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            margin-left: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .timer {
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: #1e293b;
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #334155;
+            color: #e0f2fe;
+        }
+        
+        .top-btn {
+            background: linear-gradient(to bottom, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            font-size: 0.85rem;
+        }
+        
+        .top-btn:hover {
+            background: linear-gradient(to bottom, #60a5fa, #3b82f6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.4);
+        }
+        
+        .top-btn:active {
+            transform: translateY(1px);
+        }
+        
+        .canvas-container {
+            position: relative;
+            background-color: #1e293b;
+            border-radius: 0 0 10px 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            aspect-ratio: 1/1;
+            max-width: 600px;
+            border: 2px solid #334155;
+            margin-bottom: 10px;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls-bottom {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .control-btn {
+            background-color: #334155;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        
+        .control-btn:hover {
+            background-color: #475569;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .arrow-row {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .wasa-row {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .controls-bottom .control-group:last-child {
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: #1e293b;
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #334155;
+        }
+        
+        .modal h2 {
+            color: #10b981;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .quiz-question {
+            margin-bottom: 25px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+        
+        .answer-options {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .answer-btn {
+            background-color: #334155;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .answer-btn:hover {
+            background-color: #475569;
+            transform: translateY(-2px);
+        }
+        
+        .victory-modal .modal-content {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border: 2px solid #10b981;
+        }
+        
+        .victory-message {
+            text-align: center;
+            font-size: 1.8rem;
+            color: gold;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+        }
+        
+        .stats-summary {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            background-color: rgba(16, 185, 129, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            color: #e0f2fe;
+        }
+        
+        @media (max-width: 600px) {
+            .header {
+                flex-direction: column;
+                gap: 10px;
+                padding: 10px;
+            }
+            .controls-top {
+                width: 100%;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .legend {
+                margin-left: 0;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .controls-bottom {
+                flex-direction: column;
+                align-items: center;
+            }
+            .control-group {
+                flex-direction: row;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Верхняя панель -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-circle"></div>
+            <div class="logo-text">DEAL MAZE CHALLENGE</div>
+        </div>
+        
+        <div class="controls-top">
+            <div class="key-indicators">
+                <span class="key-label">KEYS</span>
+                <div id="keysDisplay"></div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #10b981;"></div>
+                    <span>Player</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #d81b60;"></div> <!-- МАЛИНОВЫЙ В ЛЕГЕНДЕ -->
+                    <span>Key</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #06b6d4;"></div>
+                    <span>Exit</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ef4444;"></div>
+                    <span>Enemy</span>
+                </div>
+            </div>
+            
+            <div class="timer" id="timer">00:00.0</div>
+            
+            <button id="newMazeBtn" class="top-btn">NEW MAZE</button>
+            <button id="replayBtn" class="top-btn">REPLAY</button>
+        </div>
+    </div>
+    
+    <!-- Canvas -->
+    <div class="canvas-container">
+        <canvas id="mazeCanvas"></canvas>
+    </div>
+    
+    <!-- Кнопки управления внизу -->
+    <div class="controls-bottom">
+        <div class="control-group">
+            <div class="arrow-row">
+                <button class="control-btn" data-key="ArrowUp">↑</button>
+            </div>
+            <div class="arrow-row">
+                <button class="control-btn" data-key="ArrowLeft">←</button>
+                <button class="control-btn" data-key="ArrowDown">↓</button>
+                <button class="control-btn" data-key="ArrowRight">→</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <div class="wasa-row">
+                <button class="control-btn" data-key="w">W</button>
+            </div>
+            <div class="wasa-row">
+                <button class="control-btn" data-key="a">A</button>
+                <button class="control-btn" data-key="s">S</button>
+                <button class="control-btn" data-key="d">D</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <div style="font-size: 0.8rem; text-align: center; color: #94a3b8;">
+                Управление: <span style="color: #10b981;">↑ ↓ ← →</span> или <span style="color: #10b981;">W A S D</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Modal -->
+    <div class="modal" id="quizModal">
+        <div class="modal-content">
+            <h2>Викторина</h2>
+            <div class="quiz-question" id="quizQuestion"></div>
+            <div class="answer-options" id="answerOptions"></div>
+        </div>
+    </div>
+    
+    <!-- Victory Modal -->
+    <div class="modal victory-modal" id="victoryModal">
+        <div class="modal-content">
+            <h2>Поздравляем!</h2>
+            <div class="victory-message">⭐ Отличный результат!</div>
+            <div class="stats-summary">
+                <div>Время: <span id="finalTime">00:00.0</span></div>
+                <div>Шаги: <span id="finalSteps">0</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game constants — ЦВЕТ КЛЮЧЕЙ ИЗМЕНЁН НА МАЛИНОВЫЙ
+        const MAZE_SIZE = 25;
+        const CELL_SIZE = 15;
+        const PLAYER_COLOR = '#10b981';
+        const EXIT_COLOR = '#06b6d4';
+        const KEY_COLOR = '#d81b60';      // ← МАЛИНОВЫЙ ЦВЕТ КЛЮЧЕЙ В ЛАБИРИНТЕ
+        const ENEMY_COLOR = '#ef4444';
+        const WALL_COLOR = '#334155';
+        const PATH_COLOR = '#1e293b';
+        const NUM_KEYS = 10;
+        const NUM_ENEMIES = 5;
+        const ENEMY_MOVE_PROBABILITY = 0.3;
+        
+        // Game state
+        let maze = [];
+        let playerPos = {x: 1, y: 1};
+        let exitPos = null;
+        let keys = [];
+        let enemies = [];
+        let collectedKeys = 0;
+        let steps = 0;
+        let startTime;
+        let gameActive = false;
+        let gameInterval;
+        
+        // Questions
+        const questions = [
+            "Go,Goed,Go,Went,3",
+            "Eat,Eated,Eat,Ate,3",
+            "See,Seed,See,Saw,3",
+            "Take,Took,Taked,Take,1",
+            "Come,Comed,Come,Came,3",
+            "Give,Gived,Give,Gave,3",
+            "Find,Finded,Find,Found,3",
+            "Make,Maked,Make,Made,3",
+            "Get,Getted,Get,Got,3",
+            "Know,Knowed,Know,Knew,3",
+            "Think,Thought,Think,Thinking,1",
+            "Say,Sayed,Say,Said,3",
+            "Run,Ranned,Run,Ran,3",
+            "Put,Putted,Put,Puted,2",
+            "Read,Readed,Red,Read,3",
+            "Write,Writed,Write,Wrote,3",
+            "Speak,Speaked,Speak,Spoke,3",
+            "Break,Breaked,Broke,Break,2",
+            "Meet,Meet,Meeted,Met,3",
+            "Pay,Payed,Pay,Paid,3",
+            "Sit,Sitted,Sit,Sat,3",
+            "Stand,Stand,Stood,Standed,2",
+            "Begin,Begun,Began,Begin,2",
+            "Drink,Drank,Drink,Dringed,1",
+            "Sing,Sang,Sing,Singed,1",
+            "Swim,Swimmed,Swam,Swim,2",
+            "Fly,Flied,Flew,Fly,2",
+            "Ride,Rided,Rode,Ride,2",
+            "Drive,Drived,Drove,Drive,2",
+            "Choose,Choosed,Chose,Choose,2",
+            "Forget,Forgetted,Forgot,Forget,2",
+            "Wear,Wore,Wear,Wearned,1",
+            "Tear,Tore,Tear,Teared,1",
+            "Feel,Felt,Feel,Feeld,1",
+            "Keep,Keeped,Kept,Keep,2",
+            "Leave,Leaved,Left,Leave,2",
+            "Lose,Lost,Lose,Loosed,1",
+            "Send,Sended,Send,Sent,3",
+            "Build,Builded,Built,Build,2",
+            "Catch,Catched,Caught,Catch,2",
+            "Teach,Teached,Teach,Taught,3",
+            "Buy,Buyed,Bought,Buy,2",
+            "Bring,Bringed,Brought,Bring,2",
+            "Fight,Fight,Fought,Fighted,2",
+            "Sleep,Sleeped,Slept,Sleep,2",
+            "Sweep,Sweeped,Swept,Sweep,2",
+            "Tell,Telled,Told,Tell,2",
+            "Sell,Selled,Sold,Sell,2",
+            "Hear,Heard,Hear,Heared,1",
+            "Understand,Understood,Understand,Understanded,1"
+        ];
+        
+        // DOM elements
+        const canvas = document.getElementById('mazeCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerEl = document.getElementById('timer');
+        const keysDisplayEl = document.getElementById('keysDisplay');
+        const quizModal = document.getElementById('quizModal');
+        const quizQuestionEl = document.getElementById('quizQuestion');
+        const answerOptionsEl = document.getElementById('answerOptions');
+        const victoryModal = document.getElementById('victoryModal');
+        const finalTimeEl = document.getElementById('finalTime');
+        const finalStepsEl = document.getElementById('finalSteps');
+        const newMazeBtn = document.getElementById('newMazeBtn');
+        const replayBtn = document.getElementById('replayBtn');
+        
+        // Initialize the game
+        function initGame() {
+            keysDisplayEl.innerHTML = '';
+            for (let i = 0; i < NUM_KEYS; i++) {
+                const keyIcon = document.createElement('div');
+                keyIcon.className = 'key-dot';
+                keyIcon.id = `key-${i}`;
+                keysDisplayEl.appendChild(keyIcon);
+            }
+            
+            canvas.width = MAZE_SIZE * CELL_SIZE;
+            canvas.height = MAZE_SIZE * CELL_SIZE;
+            
+            generateMaze();
+            playerPos = {x: 1, y: 1};
+            keys = [];
+            enemies = [];
+            exitPos = null;
+            collectedKeys = 0;
+            steps = 0;
+            
+            startTime = Date.now();
+            gameActive = true;
+            updateTimer();
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateTimer, 100);
+            
+            placeKeys();
+            draw();
+        }
+        
+        // Generate maze using DFS backtracker
+        function generateMaze() {
+            maze = Array(MAZE_SIZE).fill().map(() => Array(MAZE_SIZE).fill(1));
+            const start = {x: 1, y: 1};
+            const stack = [start];
+            maze[start.y][start.x] = 0;
+            
+            const directions = [
+                {x: 0, y: -2},
+                {x: 2, y: 0},
+                {x: 0, y: 2},
+                {x: -2, y: 0}
+            ];
+            
+            while (stack.length > 0) {
+                const current = stack[stack.length - 1];
+                let unvisitedNeighbors = [];
+                
+                for (let dir of directions) {
+                    const nx = current.x + dir.x;
+                    const ny = current.y + dir.y;
+                    if (nx > 0 && nx < MAZE_SIZE - 1 && ny > 0 && ny < MAZE_SIZE - 1 && maze[ny][nx] === 1) {
+                        unvisitedNeighbors.push({x: nx, y: ny, dir: dir});
+                    }
+                }
+                
+                if (unvisitedNeighbors.length > 0) {
+                    const chosen = unvisitedNeighbors[Math.floor(Math.random() * unvisitedNeighbors.length)];
+                    const wallX = current.x + chosen.dir.x / 2;
+                    const wallY = current.y + chosen.dir.y / 2;
+                    maze[wallY][wallX] = 0;
+                    maze[chosen.y][chosen.x] = 0;
+                    stack.push(chosen);
+                } else {
+                    stack.pop();
+                }
+            }
+        }
+        
+        function getRandomWalkablePosition() {
+            let x, y;
+            do {
+                x = Math.floor(Math.random() * (MAZE_SIZE - 2)) + 1;
+                y = Math.floor(Math.random() * (MAZE_SIZE - 2)) + 1;
+            } while (maze[y][x] === 1);
+            return {x, y};
+        }
+        
+        function placeKeys() {
+            keys = [];
+            for (let i = 0; i < NUM_KEYS; i++) {
+                const pos = getRandomWalkablePosition();
+                keys.push({...pos, collected: false});
+            }
+        }
+        
+        function draw() {
+            ctx.fillStyle = PATH_COLOR;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            for (let y = 0; y < MAZE_SIZE; y++) {
+                for (let x = 0; x < MAZE_SIZE; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillStyle = WALL_COLOR;
+                        ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            
+            keys.forEach(key => {
+                if (!key.collected) {
+                    ctx.fillStyle = KEY_COLOR;
+                    ctx.beginPath();
+                    ctx.arc(
+                        key.x * CELL_SIZE + CELL_SIZE / 2,
+                        key.y * CELL_SIZE + CELL_SIZE / 2,
+                        CELL_SIZE / 3,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            });
+            
+            if (exitPos && collectedKeys === NUM_KEYS) {
+                ctx.fillStyle = EXIT_COLOR;
+                ctx.beginPath();
+                ctx.arc(
+                    exitPos.x * CELL_SIZE + CELL_SIZE / 2,
+                    exitPos.y * CELL_SIZE + CELL_SIZE / 2,
+                    CELL_SIZE / 3,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+            
+            if (collectedKeys === NUM_KEYS) {
+                enemies.forEach(enemy => {
+                    ctx.fillStyle = ENEMY_COLOR;
+                    ctx.beginPath();
+                    ctx.arc(
+                        enemy.x * CELL_SIZE + CELL_SIZE / 2,
+                        enemy.y * CELL_SIZE + CELL_SIZE / 2,
+                        CELL_SIZE / 3,
+                        0,
+                        Math.PI * 2
+                    );
+                    ctx.fill();
+                });
+            }
+            
+            ctx.shadowColor = PLAYER_COLOR;
+            ctx.shadowBlur = 20;
+            ctx.fillStyle = PLAYER_COLOR;
+            ctx.beginPath();
+            ctx.arc(
+                playerPos.x * CELL_SIZE + CELL_SIZE / 2,
+                playerPos.y * CELL_SIZE + CELL_SIZE / 2,
+                CELL_SIZE / 3,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        function updateTimer() {
+            if (!gameActive) return;
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const centiseconds = Math.floor((elapsed % 1000) / 10);
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}.${centiseconds}`;
+        }
+        
+        function showQuizModal(keyIndex) {
+            const questionStr = questions[Math.floor(Math.random() * questions.length)];
+            const parts = questionStr.split(',');
+            const question = parts[0];
+            const answers = [parts[1], parts[2], parts[3]];
+            const correctIndex = parseInt(parts[4]) - 1;
+            
+            // ← НОВАЯ ФОРМУЛИРОВКА ЗАДАНИЯ
+            quizQuestionEl.textContent = `Какая форма прошедшего времени у глагола "${question}"?`;
+            
+            answerOptionsEl.innerHTML = '';
+            
+            answers.forEach((answer, index) => {
+                const button = document.createElement('button');
+                button.className = 'answer-btn';
+                button.textContent = answer;
+                button.onclick = () => {
+                    if (index === correctIndex) {
+                        keys[keyIndex].collected = true;
+                        collectedKeys++;
+                        document.getElementById(`key-${keyIndex}`).classList.add('collected');
+                        if (collectedKeys === NUM_KEYS) {
+                            exitPos = getRandomWalkablePosition();
+                            enemies = [];
+                            for (let i = 0; i < NUM_ENEMIES; i++) {
+                                enemies.push(getRandomWalkablePosition());
+                            }
+                        }
+                    } else {
+                        const newPos = getRandomWalkablePosition();
+                        keys[keyIndex] = {...newPos, collected: false};
+                    }
+                    quizModal.style.display = 'none';
+                    draw();
+                };
+                answerOptionsEl.appendChild(button);
+            });
+            
+            quizModal.style.display = 'flex';
+        }
+        
+        function showVictoryModal() {
+            gameActive = false;
+            clearInterval(gameInterval);
+            finalTimeEl.textContent = timerEl.textContent;
+            finalStepsEl.textContent = steps;
+            victoryModal.style.display = 'flex';
+        }
+        
+        function moveEnemies() {
+            if (collectedKeys < NUM_KEYS) return;
+            enemies.forEach(enemy => {
+                if (Math.random() < ENEMY_MOVE_PROBABILITY) {
+                    const directions = [
+                        {x: 0, y: -1},
+                        {x: 1, y: 0},
+                        {x: 0, y: 1},
+                        {x: -1, y: 0}
+                    ];
+                    const shuffled = directions.sort(() => Math.random() - 0.5);
+                    for (let dir of shuffled) {
+                        const newX = enemy.x + dir.x;
+                        const newY = enemy.y + dir.y;
+                        if (newX > 0 && newX < MAZE_SIZE - 1 && 
+                            newY > 0 && newY < MAZE_SIZE - 1 && 
+                            maze[newY][newX] === 0) {
+                            enemy.x = newX;
+                            enemy.y = newY;
+                            break;
+                        }
+                    }
+                }
+            });
+            enemies.forEach(enemy => {
+                if (playerPos.x === enemy.x && playerPos.y === enemy.y) {
+                    exitPos = getRandomWalkablePosition();
+                }
+            });
+        }
+        
+        function movePlayer(dx, dy) {
+            if (!gameActive) return;
+            const newX = playerPos.x + dx;
+            const newY = playerPos.y + dy;
+            if (newX > 0 && newX < MAZE_SIZE - 1 && 
+                newY > 0 && newY < MAZE_SIZE - 1 && 
+                maze[newY][newX] === 0) {
+                playerPos.x = newX;
+                playerPos.y = newY;
+                steps++;
+                for (let i = 0; i < keys.length; i++) {
+                    if (!keys[i].collected && 
+                        playerPos.x === keys[i].x && 
+                        playerPos.y === keys[i].y) {
+                        showQuizModal(i);
+                        return;
+                    }
+                }
+                if (exitPos && 
+                    playerPos.x === exitPos.x && 
+                    playerPos.y === exitPos.y) {
+                    showVictoryModal();
+                }
+                draw();
+            }
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    movePlayer(1, 0);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    movePlayer(-1, 0);
+                    break;
+            }
+        });
+        
+        document.querySelectorAll('.control-btn[data-key]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const key = btn.getAttribute('data-key');
+                const event = new KeyboardEvent('keydown', { key: key });
+                document.dispatchEvent(event);
+            });
+        });
+        
+        newMazeBtn.addEventListener('click', () => initGame());
+        replayBtn.addEventListener('click', () => {
+            playerPos = {x: 1, y: 1};
+            steps = 0;
+            startTime = Date.now();
+            gameActive = true;
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateTimer, 100);
+            draw();
+        });
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === quizModal) quizModal.style.display = 'none';
+            if (e.target === victoryModal) victoryModal.style.display = 'none';
+        });
+        
+        window.onload = () => {
+            initGame();
+            setInterval(moveEnemies, 500);
+        };
+    </script>
+</body>
+</html>
+

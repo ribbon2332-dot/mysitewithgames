@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Traffic Safety Tic-Tac-Toe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top, #020617 0%, #02010a 40%, #000000 100%);
+      color: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      padding: 16px;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      background: #020617;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.7);
+      max-width: 1080px;
+      width: 100%;
+      border: 1px solid #111827;
+    }
+
+    /* ==== TOP BAR ==== */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 18px;
+      background: radial-gradient(circle at top left, #111827, #020617);
+      border-bottom: 1px solid #1f2937;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 30% 20%, #22c55e, #eab308, #ef4444);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 17px;
+      box-shadow: 0 0 20px rgba(248, 250, 252, 0.4);
+    }
+
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-title span.icon {
+      font-size: 16px;
+    }
+
+    .brand-sub {
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-ghost {
+      background: #020617;
+      color: #e5e7eb;
+      border: 1px solid #1f2937;
+    }
+
+    .btn-ghost:hover {
+      background: #111827;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+      color: #0b1120;
+      box-shadow: 0 8px 18px rgba(34, 197, 94, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(234, 179, 8, 0.6);
+    }
+
+    /* ==== MAIN LAYOUT ==== */
+    .main {
+      display: flex;
+      min-height: 520px;
+    }
+
+    .board-wrapper {
+      flex: 2;
+      padding: 20px;
+      border-right: 1px solid #111827;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top left, #020617, #000000 60%);
+    }
+
+    .board-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .board-title span.icon {
+      font-size: 16px;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 520px;
+    }
+
+    .cell {
+      background: radial-gradient(circle at top, #0b1120, #020617);
+      border-radius: 16px;
+      padding: 10px;
+      min-height: 120px;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 2px solid #1f2937;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.7);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .cell:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.8);
+      border-color: #22c55e;
+      background: radial-gradient(circle at top, #111827, #020617);
+    }
+
+    .cell.disabled {
+      cursor: default;
+      transform: none;
+      box-shadow: none;
+      border-color: #111827;
+      opacity: 0.9;
+    }
+
+    .task-text {
+      font-size: 13px;
+      line-height: 1.35;
+      color: #e5e7eb;
+      padding: 6px;
+      z-index: 1;
+    }
+
+    .mark {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 56px;
+      font-weight: 900;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0.95;
+    }
+
+    .mark.X {
+      color: #f97373;
+      text-shadow: 0 0 18px rgba(248, 113, 113, 0.9), 0 0 42px rgba(248, 113, 113, 0.8);
+    }
+
+    .mark.O {
+      color: #22c55e;
+      text-shadow: 0 0 18px rgba(34, 197, 94, 0.9), 0 0 42px rgba(34, 197, 94, 0.8);
+    }
+
+    .cell.win .mark {
+      animation: neonWin 0.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes neonWin {
+      0% {
+        text-shadow: 0 0 16px #eab308, 0 0 36px #ef4444;
+      }
+      100% {
+        text-shadow: 0 0 24px #22c55e, 0 0 52px #eab308;
+      }
+    }
+
+    /* ==== SIDEBAR ==== */
+    .sidebar {
+      flex: 1.1;
+      padding: 20px 20px 18px;
+      background: #020617;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .panel {
+      background: #020617;
+      border-radius: 16px;
+      padding: 14px 14px 12px;
+      border: 1px solid #111827;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.7);
+    }
+
+    .panel-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .panel-title span.icon {
+      font-size: 14px;
+    }
+
+    .current-player {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: #020617;
+      border-radius: 12px;
+      border: 1px solid #1f2937;
+    }
+
+    .current-label {
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .current-value {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+    }
+
+    .pill {
+      min-width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 17px;
+      box-shadow: 0 0 16px rgba(34, 197, 94, 0.9);
+      background: #22c55e;
+      color: #020617;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #020617;
+      margin-top: 4px;
+      border: 1px solid #111827;
+    }
+
+    .score-label-sub {
+      font-size: 13px;
+    }
+
+    .score-label-sub span {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+      display: block;
+    }
+
+    .score-value {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .score-x .score-value {
+      color: #f97373;
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.6);
+    }
+
+    .score-o .score-value {
+      color: #22c55e;
+      text-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+    }
+
+    .score-draw .score-value {
+      color: #e5e7eb;
+      text-shadow: 0 0 10px rgba(156, 163, 175, 0.6);
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-top: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: #020617;
+      border: 1px solid #111827;
+    }
+
+    .toggle {
+      width: 40px;
+      height: 22px;
+      border-radius: 999px;
+      background: #020617;
+      border: 1px solid #1f2937;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .toggle-knob {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ef4444;
+      transform: translateX(0);
+      transition: transform 0.15s ease, background 0.15s ease;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.7);
+    }
+
+    .toggle.on .toggle-knob {
+      transform: translateX(16px);
+      background: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.7);
+    }
+
+    .sidebar-footer {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: auto;
+      text-align: left;
+    }
+
+    .sidebar-footer span {
+      color: #9ca3af;
+    }
+
+    @media (max-width: 850px) {
+      .main {
+        flex-direction: column;
+      }
+      .board-wrapper {
+        border-right: none;
+        border-bottom: 1px solid #111827;
+      }
+      .sidebar {
+        flex: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logo">🚦</div>
+        <div class="brand-text">
+          <div class="brand-title">
+            Traffic Safety Tic-Tac-Toe
+            <span class="icon">🚸</span>
+          </div>
+          <div class="brand-sub">A2 • дорожная безопасность • крестики-нолики</div>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost" id="undoBtn" disabled>↩ Отменить ход</button>
+        <button class="btn btn-primary" id="newGameBtn">Новая игра</button>
+      </div>
+    </div>
+
+    <!-- MAIN AREA -->
+    <div class="main">
+      <!-- BOARD -->
+      <div class="board-wrapper">
+        <div class="board-title"><span class="icon">🧩</span> Игровое поле (прочитай задание — потом ставь знак)</div>
+        <div class="board" id="board">
+          <!-- 9 cells -->
+          <div class="cell" data-index="0">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="1">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="2">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="3">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="4">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="5">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="6">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="7">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+          <div class="cell" data-index="8">
+            <div class="task-text"></div>
+            <div class="mark"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <div class="panel">
+          <div class="panel-title"><span class="icon">🧑‍🤝‍🧑</span> Сейчас ходит</div>
+          <div class="current-player">
+            <div class="current-label">Активный игрок:</div>
+            <div class="current-value">
+              <span id="currentPlayerText">X (крестики)</span>
+              <div class="pill" id="currentPlayerPill">X</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title"><span class="icon">📊</span> Счёт</div>
+
+          <div class="score-row score-x">
+            <div class="score-label-sub">
+              <span>X (крестики)</span>
+            </div>
+            <div class="score-value" id="scoreX">0</div>
+          </div>
+
+          <div class="score-row score-o">
+            <div class="score-label-sub">
+              <span>O (нолики)</span>
+            </div>
+            <div class="score-value" id="scoreO">0</div>
+          </div>
+
+          <div class="score-row score-draw">
+            <div class="score-label-sub">
+              <span>Ничья</span>
+            </div>
+            <div class="score-value" id="scoreDraw">0</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title"><span class="icon">⚙️</span> Настройки</div>
+          <div class="settings-row">
+            <div>Авто-новая игра после конца</div>
+            <div class="toggle on" id="autoToggle">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          Тема: <span>Traffic safety (pavement, pedestrian, push, ride, safe, traffic).</span><br>
+          Можно дописать свои задания прямо в коде в массиве <code>taskPool</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Пул заданий (25 шт, уровень A2, дорожная безопасность)
+    const taskPool = [
+      "Children must walk on the ___, not on the road. (pavement)",
+      "A ___ walks on the pavement. (pedestrian)",
+      "Always look both ways before you cross the road. There may be a lot of ___. (traffic)",
+      "You should feel ___ when you walk to school. (safe)",
+      "Look left and right. Crossing between cars is not ___. (safe)",
+      "We ___ our bikes to school every morning. (ride)",
+      "On Sundays we ___ our scooters in the park. (ride)",
+      "Please ___ the button to change the traffic light. (push)",
+      "At the crossing you ___ the red button and wait. (push)",
+      "A red light means the ___ must stop. (traffic)",
+      "Busy morning ___ can be very loud. (traffic)",
+      "The city builds wide ___ for people to walk on. (pavements)",
+      "London has many narrow ___. (pavements)",
+      "Many ___ use the subway instead of cars. (pedestrians)",
+      "The sign shows a ___ crossing the road. (pedestrian)",
+      "At the corner there is a ___ crossing. (pedestrian)",
+      "Cyclists must be ___ and wear a helmet. (safe)",
+      "Use the bridge to stay ___ when you cross the highway. (safe)",
+      "Children should ___ slowly on the bike path. (ride)",
+      "Don’t ___ your friend into the road. (push)",
+      "Heavy ___ makes the street noisy and busy. (traffic)",
+      "Please wait on the ___. The bus is coming. (pavement)",
+      "Police officers help keep the streets ___. (safe)",
+      "Many ___ wait together at the traffic lights. (pedestrians)",
+      "At the crossing, watch the ___ and wait for green. (traffic)"
+    ];
+
+    const cells = document.querySelectorAll('.cell');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const autoToggle = document.getElementById('autoToggle');
+
+    const currentPlayerTextEl = document.getElementById('currentPlayerText');
+    const currentPlayerPill = document.getElementById('currentPlayerPill');
+
+    const scoreXEl = document.getElementById('scoreX');
+    const scoreOEl = document.getElementById('scoreO');
+    const scoreDrawEl = document.getElementById('scoreDraw');
+
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let currentPlayer = "X";
+    let gameOver = false;
+    let history = [];
+    let scoreX = 0, scoreO = 0, scoreDraw = 0;
+    let autoNewGame = true;
+
+    const winCombos = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    function shuffleTasks() {
+      const arr = [...taskPool];
+      // тасуем
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      // берём первые 9
+      return arr.slice(0, 9);
+    }
+
+    function renderTasks() {
+      const tasks = shuffleTasks();
+      cells.forEach((cell, i) => {
+        const textEl = cell.querySelector('.task-text');
+        const markEl = cell.querySelector('.mark');
+        textEl.textContent = tasks[i];
+        markEl.textContent = "";
+        markEl.className = "mark";
+        cell.className = "cell";
+      });
+    }
+
+    function updateCurrentPlayerUI() {
+      const name = currentPlayer === "X" ? "X (крестики)" : "O (нолики)";
+      currentPlayerTextEl.textContent = name;
+      currentPlayerPill.textContent = currentPlayer;
+      if (currentPlayer === "X") {
+        currentPlayerPill.style.background = "#ef4444";
+        currentPlayerPill.style.boxShadow = "0 0 14px rgba(239, 68, 68, 0.8)";
+      } else {
+        currentPlayerPill.style.background = "#22c55e";
+        currentPlayerPill.style.boxShadow = "0 0 14px rgba(34, 197, 94, 0.8)";
+      }
+    }
+
+    function handleCellClick(e) {
+      const cell = e.currentTarget;
+      const index = parseInt(cell.getAttribute('data-index'), 10);
+      const markEl = cell.querySelector('.mark');
+
+      if (board[index] !== "" || gameOver) return;
+
+      history.push({ index, player: currentPlayer });
+      undoBtn.disabled = history.length === 0;
+
+      board[index] = currentPlayer;
+      markEl.textContent = currentPlayer === "X" ? "✖" : "⭕";
+      markEl.classList.add(currentPlayer);
+      cell.classList.add("disabled");
+
+      if (checkWin(currentPlayer)) {
+        handleWin(currentPlayer);
+        return;
+      }
+
+      if (board.every(v => v !== "")) {
+        handleDraw();
+        return;
+      }
+
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      updateCurrentPlayerUI();
+    }
+
+    function checkWin(player) {
+      return winCombos.some(combo =>
+        combo.every(i => board[i] === player)
+      );
+    }
+
+    function handleWin(player) {
+      gameOver = true;
+      const name = player === "X" ? "крестики" : "нолики";
+
+      winCombos.forEach(combo => {
+        if (combo.every(i => board[i] === player)) {
+          combo.forEach(i => cells[i].classList.add('win'));
+        }
+      });
+
+      if (player === "X") {
+        scoreX++;
+        scoreXEl.textContent = scoreX;
+      } else {
+        scoreO++;
+        scoreOEl.textContent = scoreO;
+      }
+
+      currentPlayerTextEl.textContent = `Победили ${name}! 🎉`;
+      currentPlayerPill.textContent = player;
+
+      if (autoNewGame) {
+        setTimeout(startNewRound, 1600);
+      }
+    }
+
+    function handleDraw() {
+      gameOver = true;
+      scoreDraw++;
+      scoreDrawEl.textContent = scoreDraw;
+      currentPlayerTextEl.textContent = "Ничья! 🤝";
+      if (autoNewGame) {
+        setTimeout(startNewRound, 1600);
+      }
+    }
+
+    function startNewRound() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      gameOver = false;
+      history = [];
+      undoBtn.disabled = true;
+      currentPlayer = "X";
+      updateCurrentPlayerUI();
+      renderTasks();
+    }
+
+    function handleUndo() {
+      if (history.length === 0 || gameOver) return;
+      const last = history.pop();
+      const cell = document.querySelector(`.cell[data-index="${last.index}"]`);
+      const markEl = cell.querySelector('.mark');
+
+      board[last.index] = "";
+      markEl.textContent = "";
+      markEl.className = "mark";
+      cell.classList.remove("disabled", "win");
+
+      currentPlayer = last.player;
+      updateCurrentPlayerUI();
+      if (history.length === 0) undoBtn.disabled = true;
+    }
+
+    function toggleAutoNewGame() {
+      autoNewGame = !autoNewGame;
+      autoToggle.classList.toggle('on', autoNewGame);
+    }
+
+    // INIT
+    cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+    newGameBtn.addEventListener('click', startNewRound);
+    undoBtn.addEventListener('click', handleUndo);
+    autoToggle.addEventListener('click', toggleAutoNewGame);
+
+    updateCurrentPlayerUI();
+    renderTasks();
+  </script>
+</body>
+</html>

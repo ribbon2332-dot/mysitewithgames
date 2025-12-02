@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game: Have got / Has got</title>
+    <style>
+        :root {
+            --bg-color: #1a1a2e; /* Темный фон */
+            --text-color: #e94560;
+            --card-bg: #16213e;
+            --accent: #0f3460;
+            --p1-color: #FF6B6B;
+            --p2-color: #4ECDC4;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--white);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Header & Scoreboard */
+        header {
+            text-align: center;
+            padding: 15px 10px;
+        }
+
+        h1 { margin: 0; font-size: 1.8rem; color: var(--p2-color); text-shadow: 0 0 5px rgba(78, 205, 196, 0.5); }
+        p.subtitle { margin: 5px 0; color: #a0a0a0; font-size: 1rem; }
+
+        .scoreboard {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: #252a34;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 600px;
+            margin-bottom: 15px;
+            border: 1px solid #333;
+        }
+
+        .player-score {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            color: #fff;
+        }
+
+        .player-score h3 { margin: 0; font-size: 0.9rem; opacity: 0.8; }
+        .player-score span { font-size: 1.4rem; font-weight: bold; }
+
+        .active-p1 { border-color: var(--p1-color); background-color: rgba(255, 107, 107, 0.2); box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+        .active-p2 { border-color: var(--p2-color); background-color: rgba(78, 205, 196, 0.2); box-shadow: 0 0 15px rgba(78, 205, 196, 0.3); }
+
+        /* Game Grid 6x6 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            width: 95%;
+            max-width: 700px;
+            margin: 0 auto;
+            aspect-ratio: 1;
+        }
+
+        .card-container {
+            background-color: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+            aspect-ratio: 1;
+        }
+
+        .card {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card-container.flipped .card {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #444;
+        }
+
+        /* РУБАШКА (Front) */
+        .card-front {
+            background: linear-gradient(135deg, #240b36 0%, #c31432 100%);
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 10px 10px;
+            color: rgba(255,255,255,0.6);
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* ЛИЦЕВАЯ СТОРОНА (Back - с картинкой) */
+        .card-back {
+            background-color: #fff;
+            transform: rotateY(180deg);
+            overflow: hidden;
+            flex-direction: column; /* Чтобы картинка и текст были друг под другом */
+            padding: 5px;
+        }
+
+        .card-back img {
+            width: 90%;
+            height: 70%; /* Уменьшили высоту картинки, чтобы влез текст */
+            object-fit: contain;
+        }
+
+        /* Стиль подписи */
+        .card-caption {
+            height: 25%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            color: #2c3e50;
+            font-weight: bold;
+            text-transform: capitalize;
+            width: 100%;
+            margin-top: 2px;
+        }
+        
+        /* Fallback emoji style */
+        .card-back span.emoji-fallback {
+            font-size: 2.5rem;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 70%;
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            padding-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        }
+
+        button:active { transform: scale(0.95); box-shadow: 0 2px 0 rgba(0,0,0,0.2); }
+        .btn-new { background-color: var(--p2-color); color: #1a1a2e; }
+        .btn-pass { background-color: #e94560; color: white; }
+        .btn-help { background-color: #53354a; color: white; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: #252a34;
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            width: 450px;
+            animation: popIn 0.3s ease-out;
+            box-shadow: 0 0 25px rgba(78, 205, 196, 0.2);
+            border: 1px solid #444;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .quiz-btn {
+            background: #16213e;
+            border: 2px solid #4ECDC4;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .quiz-btn:hover { background: #4ECDC4; color: #16213e; }
+
+        .quiz-question { font-size: 1.3rem; margin-bottom: 15px; font-weight: bold; color: #FFE66D; line-height: 1.4; }
+        
+        @media (max-width: 500px) {
+            .grid-container { gap: 5px; }
+            .card-front { font-size: 1.8rem; }
+            .card-back span.emoji-fallback { font-size: 1.8rem; }
+            .card-caption { font-size: 0.7rem; } /* Меньший шрифт на телефонах */
+        }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Animal Memory</h1>
+        <p class="subtitle">Match Pairs & Answer "Have got/Has got"</p>
+    </header>
+
+    <div id="aria-status" aria-live="polite" style="position:absolute; width:1px; height:1px; overflow:hidden;">
+        Game started. Player 1's turn.
+    </div>
+
+    <div class="scoreboard" id="scoreboard">
+        <div class="player-score active-p1" id="p1-box">
+            <h3>Player 1</h3>
+            <span id="score-p1">0</span>
+        </div>
+        <div class="player-score" id="p2-box">
+            <h3>Player 2</h3>
+            <span id="score-p2">0</span>
+        </div>
+    </div>
+
+    <!-- GRID 6x6 -->
+    <div class="grid-container" id="grid"></div>
+
+    <footer>
+        <button class="btn-new" onclick="resetGame()">New Game</button>
+        <button class="btn-pass" onclick="switchTurn()">Pass Turn</button>
+        <button class="btn-help" onclick="openModal('help-modal')">Help</button>
+    </footer>
+
+    <!-- QUIZ MODAL -->
+    <div id="quiz-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Grammar Quiz!</h2>
+            <p class="quiz-question" id="quiz-question-text">...</p>
+            <div class="quiz-options" id="quiz-buttons"></div>
+        </div>
+    </div>
+
+    <!-- WINNER MODAL -->
+    <div id="winner-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Game Over!</h2>
+            <p id="winner-message" style="font-size: 1.2rem;">Player 1 Wins!</p>
+            <button class="btn-new" onclick="resetGame()" style="margin-top: 15px;">Play Again</button>
+        </div>
+    </div>
+
+    <!-- HELP MODAL -->
+    <div id="help-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>How to Play</h2>
+            <ul style="text-align: left; padding-left: 20px; line-height: 1.5;">
+                <li>Find matching animal pairs.</li>
+                <li>Answer the <strong>Have got / Has got</strong> question.</li>
+                <li><strong>Correct:</strong> +1 point & Keep Turn.</li>
+                <li><strong>Wrong:</strong> No point & Next Player.</li>
+            </ul>
+            <button class="btn-pass" onclick="closeModal('help-modal')">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 18 Animals (With Emoji Fallbacks) ---
+        const animals = [
+            { name: 'Cat', emoji: '🐱', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/220px-Cat03.jpg' },
+            { name: 'Dog', emoji: '🐶', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/YellowLabradorLooking_new.jpg/220px-YellowLabradorLooking_new.jpg' },
+            { name: 'Bird', emoji: '🐦', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Eopsaltria_australis_-_Mogo_Campground.jpg/220px-Eopsaltria_australis_-_Mogo_Campground.jpg' },
+            { name: 'Lion', emoji: '🦁', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Lion_waiting_in_Namibia.jpg/220px-Lion_waiting_in_Namibia.jpg' },
+            { name: 'Elephant', emoji: '🐘', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/African_Bush_Elephant.jpg/220px-African_Bush_Elephant.jpg' },
+            { name: 'Monkey', emoji: '🐵', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg/220px-Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg' },
+            { name: 'Panda', emoji: '🐼', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Grosser_Panda.JPG/220px-Grosser_Panda.JPG' },
+            { name: 'Tiger', emoji: '🐯', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Tiger.50.jpg/220px-Tiger.50.jpg' },
+            { name: 'Giraffe', emoji: '🦒', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Giraffe_Mikumi_National_Park.jpg/220px-Giraffe_Mikumi_National_Park.jpg' },
+            { name: 'Penguin', emoji: '🐧', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/South_Shetland-2016-Deception_Island%E2%80%93Chinstrap_penguin_%28Pygoscelis_antarctica%29_04.jpg/220px-South_Shetland-2016-Deception_Island%E2%80%93Chinstrap_penguin_%28Pygoscelis_antarctica%29_04.jpg' },
+            { name: 'Koala', emoji: '🐨', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Koala_climbing_tree.jpg/220px-Koala_climbing_tree.jpg' },
+            { name: 'Fox', emoji: '🦊', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Fox_-_British_Wildlife_Centre_%2817429406401%29.jpg/220px-Fox_-_British_Wildlife_Centre_%2817429406401%29.jpg' },
+            { name: 'Rabbit', emoji: '🐰', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Oryctolagus_cuniculus_Rcdo.jpg/220px-Oryctolagus_cuniculus_Rcdo.jpg' },
+            { name: 'Bear', emoji: '🐻', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/2010-kodiak-bear-1.jpg/220px-2010-kodiak-bear-1.jpg' },
+            { name: 'Dolphin', emoji: '🐬', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Tursiops_truncatus_01.jpg/220px-Tursiops_truncatus_01.jpg' },
+            { name: 'Cow', emoji: '🐮', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Cow_female_black_white.jpg/220px-Cow_female_black_white.jpg' },
+            { name: 'Pig', emoji: '🐷', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Sow_with_piglet.jpg/220px-Sow_with_piglet.jpg' },
+            { name: 'Wolf', emoji: '🐺', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Eurasian_wolf_2021.jpg/220px-Eurasian_wolf_2021.jpg' }
+        ];
+
+        // --- Quiz Questions ---
+        const quizData = [
+            { q: "I ______ a red bike.", options: ["have got", "has got", "am got"], correct: 0 },
+            { q: "My brother ______ a big robot.", options: ["have got", "has got", "is got"], correct: 1 },
+            { q: "They ______ two hamsters.", options: ["have got", "has got", "are got"], correct: 0 },
+            { q: "The cat ______ a long tail.", options: ["have got", "has got", "is got"], correct: 1 },
+            { q: "We ______ (not) a blue car.", options: ["haven't got", "hasn't got", "isn't got"], correct: 0 },
+            { q: "______ your sister got a kite?", options: ["Has", "Have", "Is"], correct: 0 },
+            { q: "______ they got a nice teacher?", options: ["Have", "Has", "Are"], correct: 0 },
+            { q: "She ______ (not) got a yellow bag.", options: ["hasn't got", "haven't got", "isn't got"], correct: 0 },
+            { q: "This is my book. ______ got my name on it.", options: ["It has", "She has", "He has"], correct: 0 },
+            { q: "My parents ______ a new car.", options: ["have got", "has got", "are got"], correct: 0 },
+            { q: "______ you got a computer game?", options: ["Have", "Has", "Do"], correct: 0 },
+            { q: "I ______ (not) got a brother.", options: ["haven't got", "hasn't got", "am not got"], correct: 0 },
+            { q: "He ______ (not) got brown eyes.", options: ["hasn't got", "haven't got", "isn't got"], correct: 0 },
+            { q: "______ the dog got a ball?", options: ["Has", "Have", "Does"], correct: 0 },
+            { q: "The elephant ______ big ears.", options: ["has got", "have got", "is got"], correct: 0 },
+            { q: "Tom and I ______ many friends.", options: ["have got", "has got", "are got"], correct: 0 },
+            { q: "______ he got a camera?", options: ["Has", "Have", "Is"], correct: 0 },
+            { q: "My sister ______ (not) got a bike.", options: ["hasn't got", "haven't got", "isn't got"], correct: 0 },
+            { q: "I ______ a good idea.", options: ["have got", "has got", "am got"], correct: 0 },
+            { q: "______ she got a yellow dress?", options: ["Has", "Have", "Is"], correct: 0 },
+            { q: "You ______ a nice room.", options: ["have got", "has got", "are got"], correct: 0 },
+            { q: "The children ______ new toys.", options: ["have got", "has got", "are got"], correct: 0 },
+            { q: "It ______ a long tail.", options: ["has got", "have got", "is got"], correct: 0 },
+            { q: "We ______ (not) got homework today.", options: ["haven't got", "hasn't got", "are not got"], correct: 0 },
+            { q: "______ I got a pencil?", options: ["Have", "Has", "Am"], correct: 0 }
+        ];
+
+        // --- Game State ---
+        let flippedCards = [];
+        let scores = { 1: 0, 2: 0 };
+        let currentPlayer = 1;
+        let matchedCount = 0;
+        let isProcessing = false; 
+        const totalPairs = 18;
+
+        const gridEl = document.getElementById('grid');
+        const scoreP1El = document.getElementById('score-p1');
+        const scoreP2El = document.getElementById('score-p2');
+        const boxP1 = document.getElementById('p1-box');
+        const boxP2 = document.getElementById('p2-box');
+        const statusEl = document.getElementById('aria-status');
+
+        function initGame() {
+            scores = { 1: 0, 2: 0 };
+            currentPlayer = 1;
+            matchedCount = 0;
+            isProcessing = false;
+            flippedCards = [];
+            
+            scoreP1El.textContent = '0';
+            scoreP2El.textContent = '0';
+            updateTurnUI();
+            
+            let deck = [...animals, ...animals];
+            deck.sort(() => 0.5 - Math.random());
+
+            gridEl.innerHTML = '';
+            deck.forEach((item, index) => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'card-container';
+                cardWrapper.dataset.name = item.name;
+                
+                cardWrapper.onclick = () => flipCard(cardWrapper);
+
+                const cardInner = document.createElement('div');
+                cardInner.className = 'card';
+
+                const front = document.createElement('div');
+                front.className = 'card-front';
+                front.innerHTML = '<span>🐾</span>'; 
+
+                const back = document.createElement('div');
+                back.className = 'card-back';
+                
+                // IMAGE SETUP WITH FALLBACK
+                const img = document.createElement('img');
+                img.src = item.img;
+                img.alt = item.name;
+                
+                img.onerror = function() { 
+                    this.style.display='none'; 
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.className = 'emoji-fallback';
+                    emojiSpan.textContent = item.emoji;
+                    back.prepend(emojiSpan); // Use prepend to keep it before caption
+                };
+                
+                back.appendChild(img);
+
+                // ADD CAPTION (NAME)
+                const caption = document.createElement('div');
+                caption.className = 'card-caption';
+                caption.textContent = item.name;
+                back.appendChild(caption);
+
+                cardInner.appendChild(front);
+                cardInner.appendChild(back);
+                cardWrapper.appendChild(cardInner);
+                gridEl.appendChild(cardWrapper);
+            });
+
+            statusEl.textContent = "Game started. Player 1's turn.";
+            closeModal('winner-modal');
+            closeModal('quiz-modal');
+        }
+
+        function flipCard(card) {
+            if (isProcessing) return;
+            if (card.classList.contains('flipped')) return;
+            if (card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                checkForMatch();
+            }
+        }
+
+        function checkForMatch() {
+            isProcessing = true;
+            const [card1, card2] = flippedCards;
+            const match = card1.dataset.name === card2.dataset.name;
+
+            if (match) {
+                setTimeout(() => {
+                    launchQuiz();
+                }, 600);
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    flippedCards = [];
+                    switchTurn();
+                    isProcessing = false;
+                }, 1000);
+            }
+        }
+
+        function launchQuiz() {
+            const modal = document.getElementById('quiz-modal');
+            const qText = document.getElementById('quiz-question-text');
+            const btnContainer = document.getElementById('quiz-buttons');
+
+            const qObj = quizData[Math.floor(Math.random() * quizData.length)];
+            qText.textContent = qObj.q;
+
+            btnContainer.innerHTML = '';
+            
+            qObj.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-btn';
+                btn.textContent = opt;
+                btn.onclick = () => handleQuizAnswer(index, qObj.correct);
+                btnContainer.appendChild(btn);
+            });
+
+            modal.style.display = 'flex';
+        }
+
+        function handleQuizAnswer(selectedIndex, correctIndex) {
+            const modal = document.getElementById('quiz-modal');
+            modal.style.display = 'none';
+
+            if (selectedIndex === correctIndex) {
+                scores[currentPlayer]++;
+                updateScores();
+                
+                flippedCards.forEach(card => {
+                    card.classList.add('matched');
+                    card.onclick = null;
+                });
+                matchedCount++;
+                
+                if (matchedCount === totalPairs) {
+                    endGame();
+                } else {
+                    flippedCards = [];
+                    isProcessing = false;
+                    statusEl.textContent = `Correct! Player ${currentPlayer} goes again.`;
+                }
+            } else {
+                alert("Wrong answer! Next player's turn.");
+                flippedCards.forEach(card => {
+                    card.classList.remove('flipped');
+                });
+                flippedCards = [];
+                switchTurn();
+                isProcessing = false;
+            }
+        }
+
+        function switchTurn() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateTurnUI();
+        }
+
+        function updateTurnUI() {
+            if (currentPlayer === 1) {
+                boxP1.classList.add('active-p1');
+                boxP2.classList.remove('active-p2');
+            } else {
+                boxP1.classList.remove('active-p1');
+                boxP2.classList.add('active-p2');
+            }
+        }
+
+        function updateScores() {
+            scoreP1El.textContent = scores[1];
+            scoreP2El.textContent = scores[2];
+        }
+
+        function endGame() {
+            const winModal = document.getElementById('winner-modal');
+            const msg = document.getElementById('winner-message');
+            
+            let text = "";
+            if (scores[1] > scores[2]) {
+                text = "🎉 Player 1 Wins! 🎉";
+            } else if (scores[2] > scores[1]) {
+                text = "🎉 Player 2 Wins! 🎉";
+            } else {
+                text = "🤝 It's a Tie! 🤝";
+            }
+            msg.textContent = text + ` (${scores[1]} - ${scores[2]})`;
+            winModal.style.display = 'flex';
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+        function resetGame() {
+            initGame();
+        }
+
+        initGame();
+
+    </script>
+</body>
+</html>
