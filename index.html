@@ -305,6 +305,15 @@
         
         const ALL_GAMES = [
             // --- ВАШИ ИГРЫ ---
+             {
+                id: 'magic-games',
+                title: 'Can-Do Magic Games',
+                thumbnail: './images/magic-games.png', 
+                url: 'magic-games.html',    
+                tags: ['grammar', 'verbs', 'kids', 'magic'],
+                category: 'Grammar Quizzes',
+                description: 'Изучай английский с магическими кубиками!'
+            },
             {
                 id: 'memory-game',
                 title: 'Animal Match',
@@ -327,8 +336,8 @@
                 id: 'grammar-fashion',
                 title: 'Grammar Fashion Show',
                 thumbnail: './images/3.png',
-                // Исправлено: предполагаем, что вы переименуете файл и уберете пробел перед точкой
-                url: 'grammar%20fashion%20show.html', 
+                // ВОЗВРАЩЕНО: Теперь ссылка включает %20 перед точкой, чтобы соответствовать файлу "grammar fashion show .html"
+                url: 'grammar%20fashion%20show%20.html', 
                 tags: ['Clothes', 'A2', 'have/has got'],
                 category: 'My Games',
                 description: 'Собери одежду.'
